@@ -1994,6 +1994,21 @@ impl<'a> Parser<'a> {
 
         // Note: when adding new syntax here, don't forget to adjust Token::can_begin_expr().
         match self.token {
+            // This match arm is a special-case of the `_` match arm below and
+            // could be removed without changing functionality, but it's faster
+            // to have it here, especially for programs with large constants.
+            token::Literal(_) => {
+                match self.parse_lit() {
+                    Ok(literal) => {
+                        hi = self.prev_span;
+                        ex = ExprKind::Lit(literal);
+                    }
+                    Err(mut err) => {
+                        self.cancel(&mut err);
+                        return Err(self.expected_expression_found());
+                    }
+                }
+            }
             token::OpenDelim(token::Paren) => {
                 self.bump();
 
